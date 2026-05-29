@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/player/presentation/pages/player_page.dart';
 import '../../features/search/presentation/pages/search_page.dart';
+import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../features/surah_list/domain/entities/surah.dart';
 import '../../features/surah_list/presentation/pages/home_page.dart';
 
@@ -16,7 +17,15 @@ class AppRouter {
   static final router = GoRouter(
     navigatorKey: navigatorKey,
     debugLogDiagnostics: kDebugMode,
+    initialLocation: SplashScreen.route.path,
     routes: [
+      // splash screen (initial)
+      GoRoute(
+        path: SplashScreen.route.path,
+        name: SplashScreen.route.name,
+        builder: (context, state) => const SplashScreen(),
+      ),
+
       // home page
       GoRoute(
         path: HomePage.route.path,
