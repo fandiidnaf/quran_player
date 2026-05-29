@@ -66,3 +66,9 @@ class _PlayingStateUpdated extends PlayerEvent {
   @override
   List<Object?> get props => [isPlaying];
 }
+
+/// Internal: the current track finished playing.
+/// Triggers repeat (replay) or auto-advance to the next surah.
+class _TrackCompleted extends PlayerEvent {
+  const _TrackCompleted();
+}

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/api_constant.dart';
 import '../../../surah_list/domain/entities/surah.dart';
 import '../../domain/usecases/pause_audio_usecase.dart';
 import '../../domain/usecases/play_surah_usecase.dart';
@@ -30,6 +31,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<bool>? _playingSub;
+  StreamSubscription<void>? _completedSub;
 
   PlayerBloc({
     required PlaySurahUseCase playSurah,
@@ -51,11 +53,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<_PositionUpdated>(_onPositionUpdated);
     on<_DurationUpdated>(_onDurationUpdated);
     on<_PlayingStateUpdated>(_onPlayingStateUpdated);
+    on<_TrackCompleted>(_onTrackCompleted);
 
     _subscribeToStreams();
   }
 
-  //  Stream subscriptions
+  // ── Stream subscriptions ─────────────────────────────────────
 
   void _subscribeToStreams() {
     _positionSub = _repository.positionStream.listen(
@@ -69,9 +72,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _playingSub = _repository.playingStream.listen(
       (playing) => add(_PlayingStateUpdated(playing)),
     );
+
+    _completedSub = _repository.completedStream.listen(
+      (_) => add(const _TrackCompleted()),
+    );
   }
 
-  //  Handlers
+  // ── Handlers ────────────────────────────────────────────────
 
   Future<void> _onPlaySurah(
     PlaySurahEvent event,
@@ -101,7 +108,18 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       ),
     );
 
-    final result = await _playSurah(surah.audioUrl);
+    var result = await _playSurah(surah.audioUrl);
+
+    // Fallback: some reciter editions lack full-surah audio for certain
+    // surahs (returns HTTP 403). Retry with Alafasy, which is available for
+    // all 114 surahs, so playback never silently fails.
+    if (result.isLeft()) {
+      final fallbackUrl = ApiConstants.audioUrl('ar.alafasy', surah.number);
+      if (fallbackUrl != surah.audioUrl) {
+        result = await _playSurah(fallbackUrl);
+      }
+    }
+
     result.fold(
       (failure) =>
           emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
@@ -169,7 +187,24 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     emit(state.copyWith(isPlaying: event.isPlaying));
   }
 
-  //  Helpers
+  /// Called when the current track finishes.
+  ///   - Repeat ON  → restart the same surah from the beginning.
+  ///   - Repeat OFF → auto-advance to the next surah (shuffle-aware).
+  Future<void> _onTrackCompleted(
+    _TrackCompleted event,
+    Emitter<PlayerState> emit,
+  ) async {
+    if (state.currentSurah == null) return;
+
+    if (state.isRepeat) {
+      await _seekAudio(Duration.zero);
+      await _repository.resume();
+    } else {
+      add(NextSurahEvent());
+    }
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
 
   int _nextIndex() {
     if (state.isShuffle) return _randomExcept(state.currentIndex);
@@ -200,6 +235,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _positionSub?.cancel();
     _durationSub?.cancel();
     _playingSub?.cancel();
+    _completedSub?.cancel();
     return super.close();
   }
 }

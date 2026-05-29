@@ -32,7 +32,7 @@ class SurahModel extends Surah {
   /// ```
   factory SurahModel.fromJson(Map<String, dynamic> json) {
     final int number = json['number'] as int;
-    final reciter = reciterFor(number);
+    final Reciter reciter = reciterFor(number);
 
     // Map English revelation type → Indonesian equivalent.
     final revType = (json['revelationType'] as String) == 'Meccan'

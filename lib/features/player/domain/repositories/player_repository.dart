@@ -27,4 +27,7 @@ abstract class PlayerRepository {
 
   /// Whether the player is currently playing.
   Stream<bool> get playingStream;
+
+  /// Emits an event each time the current track finishes playing.
+  Stream<void> get completedStream;
 }

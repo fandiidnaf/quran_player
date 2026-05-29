@@ -1,9 +1,11 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:just_audio/just_audio.dart';
 
 import '../../../../core/error/failures.dart';
 import '../../domain/repositories/player_repository.dart';
 import '../datasources/audio_datasource.dart';
 
+/// Implements [PlayerRepository] by delegating to [AudioDataSource].
 class PlayerRepositoryImpl implements PlayerRepository {
   final AudioDataSource _dataSource;
 
@@ -68,4 +70,9 @@ class PlayerRepositoryImpl implements PlayerRepository {
 
   @override
   Stream<bool> get playingStream => _dataSource.playingStream;
+
+  @override
+  Stream<void> get completedStream => _dataSource.playerStateStream
+      .where((state) => state.processingState == ProcessingState.completed)
+      .map((_) {});
 }

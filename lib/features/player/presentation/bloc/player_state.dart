@@ -1,5 +1,9 @@
 part of 'player_bloc.dart';
 
+/// Single unified state for the player.
+///
+/// Using a single state class (instead of subclasses) keeps BlocBuilder
+/// straightforward — the UI rebuilds whenever any field changes.
 class PlayerState extends Equatable {
   /// Surah currently loaded (null = nothing selected yet).
   final Surah? currentSurah;

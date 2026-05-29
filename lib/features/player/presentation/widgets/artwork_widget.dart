@@ -13,7 +13,7 @@ class ArtworkWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.coverFor(surah.number);
+    final List<Color> colors = AppColors.coverFor(surah.number);
 
     return AspectRatio(
       aspectRatio: 1,
@@ -52,38 +52,41 @@ class ArtworkWidget extends StatelessWidget {
                 ),
               ),
             ),
-            // Arabic name
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  surah.arabicName,
-                  textDirection: TextDirection.rtl,
-                  style: TextStyle(
-                    fontFamily: 'serif',
-                    color: Colors.white,
-                    fontSize: 80,
-                    height: 1,
-                    shadows: const [
-                      Shadow(
-                        color: Color(0x66000000),
-                        offset: Offset(0, 6),
-                        blurRadius: 24,
-                      ),
-                    ],
-                  ),
+            // Arabic name — centered in the card
+            Center(
+              child: Text(
+                surah.arabicName,
+                textDirection: TextDirection.rtl,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.amiri(
+                  color: Colors.white,
+                  fontSize: 76,
+                  height: 1.0,
+                  shadows: const [
+                    Shadow(
+                      color: Color(0x66000000),
+                      offset: Offset(0, 6),
+                      blurRadius: 24,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                Text(
-                  'SURAH KE-${surah.number}',
-                  style: GoogleFonts.plusJakartaSans(
-                    color: Colors.white.withValues(alpha: .82),
-                    fontSize: 13,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w500,
-                  ),
+              ),
+            ),
+            // "SURAH KE-x" label — pinned below the glyph
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 44,
+              child: Text(
+                'SURAH KE-${surah.number}',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.plusJakartaSans(
+                  color: Colors.white.withValues(alpha: .82),
+                  fontSize: 13,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w500,
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -95,7 +98,7 @@ class ArtworkWidget extends StatelessWidget {
 class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final Paint paint = Paint()
       ..color = Colors.white.withValues(alpha: .1)
       ..strokeWidth = 0.7;
     const spacing = 13.0;

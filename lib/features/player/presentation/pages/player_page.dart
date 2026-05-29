@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -9,10 +8,12 @@ import '../bloc/player_bloc.dart';
 import '../widgets/artwork_widget.dart';
 import '../widgets/seek_bar.dart';
 
+/// Full-screen "Now Playing" overlay.
+/// Slides up from the bottom (modal route).
 class PlayerPage extends StatelessWidget {
   const PlayerPage({super.key});
 
-  static final RouteStructure route = .new(path: '/player', name: 'player');
+  static const RouteStructure route = .new(path: '/player', name: 'player');
 
   @override
   Widget build(BuildContext context) {
@@ -39,13 +40,15 @@ class PlayerPage extends StatelessWidget {
             child: SafeArea(
               child: Column(
                 children: [
+                  // ── Top bar ─────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
+                        // Chevron down — close player
                         IconButton(
-                          onPressed: context.pop,
+                          onPressed: () => Navigator.of(context).pop(),
                           icon: const Icon(Icons.keyboard_arrow_down_rounded),
                           color: AppColors.textPrimary,
                           iconSize: 32,
@@ -72,18 +75,13 @@ class PlayerPage extends StatelessWidget {
                             ),
                           ],
                         ),
-                        // More options (placeholder)
-                        IconButton(
-                          onPressed: () {},
-                          icon: const Icon(Icons.more_horiz_rounded),
-                          color: AppColors.textPrimary,
-                          iconSize: 26,
-                        ),
+                        // Spacer to keep the title block centered
+                        const SizedBox(width: 48),
                       ],
                     ),
                   ),
 
-                  //  Artwork ─
+                  // ── Artwork ─────────────────────────────────
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(28, 8, 28, 8),
@@ -91,55 +89,45 @@ class PlayerPage extends StatelessWidget {
                     ),
                   ),
 
-                  //  Meta + controls
+                  // ── Meta + controls ──────────────────────────
                   Padding(
                     padding: const EdgeInsets.fromLTRB(26, 0, 26, 24),
                     child: Column(
                       children: [
-                        // Title row
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    surah.latinName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.plusJakartaSans(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.4,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    '${surah.reciterName} · ${surah.ayahCount} ayat',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.plusJakartaSans(
-                                      color: AppColors.textMuted,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ],
+                        // Title block (full-width, left-aligned)
+                        SizedBox(
+                          width: double.infinity,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                surah.latinName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: -0.4,
+                                ),
                               ),
-                            ),
-                            // Heart / favourite (decorative)
-                            IconButton(
-                              onPressed: () {},
-                              icon: const Icon(Icons.favorite_border_rounded),
-                              color: AppColors.gold,
-                              iconSize: 24,
-                            ),
-                          ],
+                              const SizedBox(height: 3),
+                              Text(
+                                '${surah.reciterName} · ${surah.ayahCount} ayat',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: AppColors.textMuted,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
 
                         const SizedBox(height: 16),
 
-                        //  Seek bar
+                        // ── Seek bar ──────────────────────────
                         SeekBar(
                           position: state.position,
                           duration: state.duration,
@@ -149,7 +137,7 @@ class PlayerPage extends StatelessWidget {
 
                         const SizedBox(height: 14),
 
-                        //  Playback controls
+                        // ── Playback controls ────────────────
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
