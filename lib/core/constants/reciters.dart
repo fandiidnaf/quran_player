@@ -9,9 +9,9 @@ class Reciter {
 
 const List<Reciter> kReciters = [
   Reciter(id: 'ar.alafasy', name: 'Mishary Rashid Alafasy'),
-  Reciter(id: 'ar.abdulbasit', name: 'Abdul Basit Abdul Samad'),
-  Reciter(id: 'ar.saadalghamdi', name: 'Saad Al-Ghamdi'),
-  Reciter(id: 'ar.maheralmuaiqly', name: 'Maher Al-Muaiqly'),
+  // Reciter(id: 'ar.abdulbasit', name: 'Abdul Basit Abdul Samad'),
+  // Reciter(id: 'ar.saadalghamdi', name: 'Saad Al-Ghamdi'),
+  // Reciter(id: 'ar.maheralmuaiqly', name: 'Maher Al-Muaiqly'),
 ];
 
 /// Assign a reciter to each surah in a round-robin pattern.

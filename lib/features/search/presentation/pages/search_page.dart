@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
@@ -129,7 +130,7 @@ class _SearchPageState extends State<SearchPage> {
                             ),
                             const SizedBox(width: 8),
                             GestureDetector(
-                              onTap: () => Navigator.of(context).pop(),
+                              onTap: context.pop,
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 4,
@@ -211,7 +212,7 @@ class _SearchPageState extends State<SearchPage> {
                                               index: realIdx,
                                             ),
                                           );
-                                          Navigator.of(context).pop();
+                                          context.pop();
                                         },
                                       );
                                     },

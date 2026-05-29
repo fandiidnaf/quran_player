@@ -21,6 +21,7 @@ class MiniPlayer extends StatelessWidget {
       buildWhen: (prev, curr) =>
           prev.currentSurah != curr.currentSurah ||
           prev.isPlaying != curr.isPlaying ||
+          prev.isLoading != curr.isLoading ||
           prev.position != curr.position ||
           prev.duration != curr.duration,
       builder: (context, state) {
@@ -101,13 +102,22 @@ class MiniPlayer extends StatelessWidget {
                                 shape: BoxShape.circle,
                                 color: AppColors.surface,
                               ),
-                              child: Icon(
-                                state.isPlaying
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: AppColors.gold,
-                                size: 22,
-                              ),
+
+                              child: state.isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(11),
+                                      child: CircularProgressIndicator(
+                                        color: AppColors.gold,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Icon(
+                                      state.isPlaying
+                                          ? Icons.pause_rounded
+                                          : Icons.play_arrow_rounded,
+                                      color: AppColors.gold,
+                                      size: 22,
+                                    ),
                             ),
                           ),
                         ],

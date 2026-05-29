@@ -93,6 +93,6 @@ void playerDependencies() {
 
   // Data sources
   sl.registerLazySingleton<AudioDataSource>(
-    () => AudioDataSourceImpl(audioPlayer: sl<AudioPlayer>()),
+    () => AudioDataSourceImpl(sl<AudioPlayer>()),
   );
 }

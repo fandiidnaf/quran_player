@@ -17,6 +17,7 @@ dependencies:
   go_router: ^17.2.3
   google_fonts: ^8.1.0
   just_audio: ^0.10.5
+  just_audio_background: ^0.0.1-beta.17
   pretty_dio_logger: ^1.4.0
 
 dev_dependencies:

@@ -32,6 +32,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<void>? _completedSub;
+  StreamSubscription<bool>? _loadingSub;
 
   PlayerBloc({
     required PlaySurahUseCase playSurah,
@@ -54,6 +55,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<_DurationUpdated>(_onDurationUpdated);
     on<_PlayingStateUpdated>(_onPlayingStateUpdated);
     on<_TrackCompleted>(_onTrackCompleted);
+    on<_LoadingUpdated>(_onLoadingUpdated);
 
     _subscribeToStreams();
   }
@@ -75,6 +77,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
     _completedSub = _repository.completedStream.listen(
       (_) => add(const _TrackCompleted()),
+    );
+
+    // Engine-driven loading. This is the single source of truth for
+    // `isLoading`, so it can never get stuck: once the engine is ready,
+    // loading is cleared automatically.
+    _loadingSub = _repository.loadingStream.listen(
+      (loading) => add(_LoadingUpdated(loading)),
     );
   }
 
@@ -108,7 +117,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       ),
     );
 
-    var result = await _playSurah(surah.audioUrl);
+    var result = await _playSurah(
+      surah.audioUrl,
+      id: '${surah.number}',
+      title: surah.latinName,
+      artist: surah.reciterName,
+    );
 
     // Fallback: some reciter editions lack full-surah audio for certain
     // surahs (returns HTTP 403). Retry with Alafasy, which is available for
@@ -116,14 +130,22 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     if (result.isLeft()) {
       final fallbackUrl = ApiConstants.audioUrl('ar.alafasy', surah.number);
       if (fallbackUrl != surah.audioUrl) {
-        result = await _playSurah(fallbackUrl);
+        result = await _playSurah(
+          fallbackUrl,
+          id: '${surah.number}',
+          title: surah.latinName,
+          artist: surah.reciterName,
+        );
       }
     }
 
     result.fold(
       (failure) =>
           emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
-      (_) => emit(state.copyWith(isLoading: false)),
+      // Explicitly mark as playing. just_audio's `playing` flag stays true
+      // across track completion, so its stream may not re-emit on auto-advance;
+      // setting it here keeps state in sync with the engine.
+      (_) => emit(state.copyWith(isLoading: false, isPlaying: true)),
     );
   }
 
@@ -131,7 +153,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     TogglePlayEvent event,
     Emitter<PlayerState> emit,
   ) async {
-    if (state.currentSurah == null) return;
+    // Ignore taps while a track is still loading — toggling play/pause
+    // mid-load corrupts the intended play state (the "disabled / no sound"
+    // symptom). The button shows a spinner during this window.
+    if (state.currentSurah == null || state.isLoading) return;
 
     if (state.isPlaying) {
       await _pauseAudio();
@@ -187,6 +212,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     emit(state.copyWith(isPlaying: event.isPlaying));
   }
 
+  void _onLoadingUpdated(_LoadingUpdated event, Emitter<PlayerState> emit) {
+    emit(state.copyWith(isLoading: event.isLoading));
+  }
+
   /// Called when the current track finishes.
   ///   - Repeat ON  → restart the same surah from the beginning.
   ///   - Repeat OFF → auto-advance to the next surah (shuffle-aware).
@@ -236,6 +265,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _durationSub?.cancel();
     _playingSub?.cancel();
     _completedSub?.cancel();
+    _loadingSub?.cancel();
     return super.close();
   }
 }

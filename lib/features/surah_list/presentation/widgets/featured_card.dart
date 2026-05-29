@@ -97,22 +97,6 @@ class FeaturedCard extends StatelessWidget {
                         textDirection: TextDirection.rtl,
                       ),
                     ),
-                    // Play/pause button
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: .28),
-                      ),
-                      child: Icon(
-                        isPlaying
-                            ? Icons.pause_rounded
-                            : Icons.play_arrow_rounded,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
                   ],
                 ),
               ),

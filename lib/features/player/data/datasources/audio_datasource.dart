@@ -1,7 +1,19 @@
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 
+/// Low-level wrapper around [AudioPlayer] from the just_audio package.
+///
+/// Exposes only the interface used by the repository so the rest of the
+/// code never depends on the just_audio library directly.
 abstract class AudioDataSource {
-  Future<void> load(String url);
+  /// Loads [url], attaching media metadata so the system notification /
+  /// lock-screen shows the surah [title] and reciter [artist].
+  Future<void> load(
+    String url, {
+    required String id,
+    required String title,
+    required String artist,
+  });
   Future<void> play();
   Future<void> pause();
   Future<void> seek(Duration position);
@@ -16,39 +28,56 @@ abstract class AudioDataSource {
 }
 
 class AudioDataSourceImpl implements AudioDataSource {
-  final AudioPlayer audioPlayer;
+  final AudioPlayer _player;
 
-  AudioDataSourceImpl({required this.audioPlayer});
+  AudioDataSourceImpl(this._player);
 
   @override
-  Future<void> load(String url) async {
-    await audioPlayer.setUrl(url);
+  Future<void> load(
+    String url, {
+    required String id,
+    required String title,
+    required String artist,
+  }) async {
+    // A MediaItem tag is required by just_audio_background; it powers the
+    // notification + lock-screen metadata and enables background playback.
+    await _player.setAudioSource(
+      AudioSource.uri(
+        Uri.parse(url),
+        tag: MediaItem(
+          id: id,
+          title: title,
+          artist: artist,
+          album: "Al-Qur'an",
+        ),
+      ),
+    );
   }
 
   @override
-  Future<void> play() => audioPlayer.play();
+  Future<void> play() => _player.play();
 
   @override
-  Future<void> pause() => audioPlayer.pause();
+  Future<void> pause() => _player.pause();
 
   @override
-  Future<void> seek(Duration position) => audioPlayer.seek(position);
+  Future<void> seek(Duration position) => _player.seek(position);
 
   @override
-  Future<void> stop() => audioPlayer.stop();
+  Future<void> stop() => _player.stop();
 
   @override
-  Stream<Duration> get positionStream => audioPlayer.positionStream;
+  Stream<Duration> get positionStream => _player.positionStream;
 
   @override
-  Stream<Duration?> get durationStream => audioPlayer.durationStream;
+  Stream<Duration?> get durationStream => _player.durationStream;
 
   @override
-  Stream<bool> get playingStream => audioPlayer.playingStream;
+  Stream<bool> get playingStream => _player.playingStream;
 
   @override
-  Stream<PlayerState> get playerStateStream => audioPlayer.playerStateStream;
+  Stream<PlayerState> get playerStateStream => _player.playerStateStream;
 
   @override
-  void dispose() => audioPlayer.dispose();
+  void dispose() => _player.dispose();
 }

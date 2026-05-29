@@ -12,9 +12,19 @@ class PlayerRepositoryImpl implements PlayerRepository {
   const PlayerRepositoryImpl(this._dataSource);
 
   @override
-  Future<Either<Failure, void>> play(String url) async {
+  Future<Either<Failure, void>> play(
+    String url, {
+    required String id,
+    required String title,
+    required String artist,
+  }) async {
     try {
-      await _dataSource.load(url);
+      // Pause first so the engine's `playing` flag is false during the load.
+      // Otherwise the leftover `playing == true` from the previous track makes
+      // the UI show "playing" while the new track is still loading (the cause
+      // of the mini-player/detail mismatch and the stuck button).
+      await _dataSource.pause();
+      await _dataSource.load(url, id: id, title: title, artist: artist);
       await _dataSource.play();
       return const Right(null);
     } catch (e) {
@@ -75,4 +85,9 @@ class PlayerRepositoryImpl implements PlayerRepository {
   Stream<void> get completedStream => _dataSource.playerStateStream
       .where((state) => state.processingState == ProcessingState.completed)
       .map((_) {});
+
+  @override
+  Stream<bool> get loadingStream => _dataSource.playerStateStream
+      .map((state) => state.processingState == ProcessingState.loading)
+      .distinct();
 }

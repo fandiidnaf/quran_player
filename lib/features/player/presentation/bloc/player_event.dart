@@ -72,3 +72,12 @@ class _PlayingStateUpdated extends PlayerEvent {
 class _TrackCompleted extends PlayerEvent {
   const _TrackCompleted();
 }
+
+/// Internal: the engine's loading state changed (initial load only).
+class _LoadingUpdated extends PlayerEvent {
+  final bool isLoading;
+  const _LoadingUpdated(this.isLoading);
+
+  @override
+  List<Object?> get props => [isLoading];
+}

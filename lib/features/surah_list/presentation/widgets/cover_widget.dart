@@ -71,7 +71,7 @@ class CoverWidget extends StatelessWidget {
 class _CrossHatchPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    final Paint paint = Paint()
       ..color = Colors.white.withValues(alpha: .12)
       ..strokeWidth = 0.8;
 

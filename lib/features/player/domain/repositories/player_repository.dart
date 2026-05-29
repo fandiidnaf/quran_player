@@ -5,7 +5,14 @@ import '../../../../core/error/failures.dart';
 /// Contract for audio playback operations.
 abstract class PlayerRepository {
   /// Load and start playing audio from [url].
-  Future<Either<Failure, void>> play(String url);
+  ///
+  /// [id], [title] and [artist] populate the system media notification.
+  Future<Either<Failure, void>> play(
+    String url, {
+    required String id,
+    required String title,
+    required String artist,
+  });
 
   /// Pause the current audio.
   Future<Either<Failure, void>> pause();
@@ -30,4 +37,9 @@ abstract class PlayerRepository {
 
   /// Emits an event each time the current track finishes playing.
   Stream<void> get completedStream;
+
+  /// Emits `true` while the engine is performing the *initial* load of a
+  /// track, and `false` once it is ready (or on any other state). Mid-stream
+  /// buffering is intentionally NOT reported as loading.
+  Stream<bool> get loadingStream;
 }
