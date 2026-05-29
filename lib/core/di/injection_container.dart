@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 
+import '../../features/search/presentation/bloc/search_bloc.dart';
 import '../../features/surah_list/data/datasources/surah_remote_datasource.dart';
 import '../../features/surah_list/data/repositories/surah_repository_impl.dart';
 import '../../features/surah_list/domain/repositories/surah_repository.dart';
@@ -17,6 +18,8 @@ void initDependencies() {
   coreDependencies();
 
   surahListDependencies();
+
+  searchDependencies();
 }
 
 void coreDependencies() {
@@ -43,4 +46,9 @@ void surahListDependencies() {
   sl.registerLazySingleton<SurahRemoteDataSource>(
     () => SurahRemoteDataSourceImpl(sl<DioClient>().dio),
   );
+}
+
+void searchDependencies() {
+  // blocs
+  sl.registerFactory<SearchBloc>(() => SearchBloc());
 }

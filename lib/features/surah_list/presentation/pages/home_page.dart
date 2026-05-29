@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/route_structure.dart';
+import '../../../search/presentation/pages/search_page.dart';
 import '../../domain/entities/surah.dart';
 import '../bloc/surah_list_bloc.dart';
 import '../widgets/surah_row.dart';
@@ -140,7 +142,12 @@ class HomePage extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
       child: GestureDetector(
         onTap: () {
-          // TODO: Implement search page
+          final SurahListState listState = context.read<SurahListBloc>().state;
+
+          context.pushNamed(
+            SearchPage.route.name,
+            extra: listState is SurahListLoaded ? listState.surahs : null,
+          );
         },
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
