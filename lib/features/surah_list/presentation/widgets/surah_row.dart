@@ -8,9 +8,17 @@ import 'cover_widget.dart';
 /// One row in the surah list — cover art, Latin + reciter name, Arabic name.
 class SurahRow extends StatelessWidget {
   final Surah surah;
+  final bool isCurrent;
+  final bool isPlaying;
   final VoidCallback onTap;
 
-  const SurahRow({super.key, required this.surah, required this.onTap});
+  const SurahRow({
+    super.key,
+    required this.surah,
+    required this.isCurrent,
+    required this.isPlaying,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,12 +42,18 @@ class SurahRow extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.plusJakartaSans(
-                            color: AppColors.textPrimary,
+                            color: isCurrent
+                                ? AppColors.gold
+                                : AppColors.textPrimary,
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
+                      if (isCurrent && isPlaying) ...[
+                        const SizedBox(width: 6),
+                        const _EqualizerBars(),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 3),
@@ -61,7 +75,7 @@ class SurahRow extends StatelessWidget {
               surah.arabicName,
               style: TextStyle(
                 fontFamily: 'serif',
-                color: AppColors.textMuted,
+                color: isCurrent ? AppColors.gold : AppColors.textMuted,
                 fontSize: 20,
               ),
               textDirection: TextDirection.rtl,

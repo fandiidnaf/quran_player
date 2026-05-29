@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/route_structure.dart';
+import '../../../player/presentation/bloc/player_bloc.dart';
 import '../../../surah_list/domain/entities/surah.dart';
 import '../../../surah_list/presentation/widgets/surah_row.dart';
 import '../bloc/search_bloc.dart';
 
-/// Search screen — filters surahs by title, meaning, Arabic name, or reciter.
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, this.allSurahs});
 
-  final List<Surah>? allSurahs;
-
   static const RouteStructure route = .new(path: '/search', name: 'search');
+
+  final List<Surah>? allSurahs;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -24,20 +23,20 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage> {
   final TextEditingController searchCont = TextEditingController();
-  final FocusNode focusNodeText = FocusNode();
+  final FocusNode searchFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => focusNodeText.requestFocus(),
+      (_) => searchFocusNode.requestFocus(),
     );
   }
 
   @override
   void dispose() {
     searchCont.dispose();
-    focusNodeText.dispose();
+    searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -60,7 +59,6 @@ class _SearchPageState extends State<SearchPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      //  Search input row
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
                         child: Row(
@@ -89,7 +87,7 @@ class _SearchPageState extends State<SearchPage> {
                                     Expanded(
                                       child: TextField(
                                         controller: searchCont,
-                                        focusNode: focusNodeText,
+                                        focusNode: searchFocusNode,
                                         onChanged: (q) => context
                                             .read<SearchBloc>()
                                             .add(SearchQueryChanged(q)),
@@ -131,7 +129,7 @@ class _SearchPageState extends State<SearchPage> {
                             ),
                             const SizedBox(width: 8),
                             GestureDetector(
-                              onTap: context.pop,
+                              onTap: () => Navigator.of(context).pop(),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 4,
@@ -175,7 +173,7 @@ class _SearchPageState extends State<SearchPage> {
                                   padding: const EdgeInsets.all(32),
                                   child: Text(
                                     'Tidak ditemukan.\nCoba kata kunci lain\n'
-                                    '(mis. "Yaseen", "Rahmaan", "Alafasy").',
+                                    '(mis. "Yasin", "Rahman", "Alafasy").',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.plusJakartaSans(
                                       color: AppColors.textMuted,
@@ -185,13 +183,39 @@ class _SearchPageState extends State<SearchPage> {
                                   ),
                                 ),
                               )
-                            : ListView.builder(
-                                padding: const EdgeInsets.only(bottom: 120),
-                                itemCount: state.results.length,
-                                itemBuilder: (context, i) {
-                                  final surah = state.results[i];
-
-                                  return SurahRow(surah: surah, onTap: () {});
+                            : BlocBuilder<PlayerBloc, PlayerState>(
+                                buildWhen: (p, c) =>
+                                    p.currentSurah != c.currentSurah ||
+                                    p.isPlaying != c.isPlaying,
+                                builder: (context, playerState) {
+                                  return ListView.builder(
+                                    padding: const EdgeInsets.only(bottom: 120),
+                                    itemCount: state.results.length,
+                                    itemBuilder: (context, i) {
+                                      final surah = state.results[i];
+                                      // Resolve the real index in the full list
+                                      final realIdx = state.allSurahs
+                                          .indexWhere(
+                                            (s) => s.number == surah.number,
+                                          );
+                                      return SurahRow(
+                                        surah: surah,
+                                        isCurrent:
+                                            playerState.currentSurah?.number ==
+                                            surah.number,
+                                        isPlaying: playerState.isPlaying,
+                                        onTap: () {
+                                          context.read<PlayerBloc>().add(
+                                            PlaySurahEvent(
+                                              surahs: state.allSurahs,
+                                              index: realIdx,
+                                            ),
+                                          );
+                                          Navigator.of(context).pop();
+                                        },
+                                      );
+                                    },
+                                  );
                                 },
                               ),
                       ),

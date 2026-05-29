@@ -4,23 +4,23 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── Backgrounds ────────────────────────────────────────────────
+  //  Backgrounds
   static const Color bg1 = Color(0xFF0A1A17);
   static const Color bg2 = Color(0xFF06100E);
 
-  // ── Surfaces ───────────────────────────────────────────────────
+  //  Surfaces ─
   /// rgba(255,255,255,0.045)
   static const Color surface = Color(0x0BFFFFFF);
 
   /// rgba(255,255,255,0.08)
   static const Color surfaceBorder = Color(0x14FFFFFF);
 
-  // ── Brand ──────────────────────────────────────────────────────
+  //  Brand
   static const Color gold = Color(0xFFE0BE7B);
   static const Color goldDeep = Color(0xFFC9A24B);
   static const Color emerald = Color(0xFF37C28C);
 
-  // ── Text ───────────────────────────────────────────────────────
+  //  Text ─
   static const Color textPrimary = Color(0xFFF3EFE4);
 
   /// rgba(243,239,228,0.56)
@@ -29,7 +29,7 @@ class AppColors {
   /// rgba(243,239,228,0.34)
   static const Color textFaint = Color(0x57F3EFE4);
 
-  // ── Surah cover gradients (6 pairs, cycled by surahNumber % 6) ─
+  //  Surah cover gradients (6 pairs, cycled by surahNumber % 6) ─
   static const List<List<Color>> coverGradients = [
     [Color(0xFF1F6F5C), Color(0xFF0C332B)],
     [Color(0xFF3A6EA5), Color(0xFF16263F)],

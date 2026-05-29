@@ -6,15 +6,59 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/router/route_structure.dart';
-import '../../../search/presentation/pages/search_page.dart';
 import '../../domain/entities/surah.dart';
+import '../../../player/presentation/bloc/player_bloc.dart';
+import '../../../player/presentation/pages/player_page.dart';
+import '../../../player/presentation/widgets/mini_player.dart';
+import '../../../search/presentation/pages/search_page.dart';
 import '../bloc/surah_list_bloc.dart';
+import '../widgets/featured_card.dart';
+import '../widgets/history_sheet.dart';
 import '../widgets/surah_row.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   static const RouteStructure route = .new(path: '/', name: 'home');
+
+  void _showHistory(
+    BuildContext context,
+    PlayerState playerState,
+    List<Surah> surahs,
+  ) {
+    if (playerState.history.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Belum ada riwayat. Putar sebuah surah terlebih dahulu.',
+            style: GoogleFonts.plusJakartaSans(),
+          ),
+          backgroundColor: const Color(0xFF12211D),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF12211D),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (sheetCtx) {
+        return BlocProvider.value(
+          value: context.read<PlayerBloc>(),
+          child: HistorySheet(
+            surahs: surahs,
+            history: playerState.history,
+            currentSurahNumber: playerState.currentSurah?.number,
+            isPlaying: playerState.isPlaying,
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,14 +68,24 @@ class HomePage extends StatelessWidget {
         builder: (context) {
           return Scaffold(
             backgroundColor: AppColors.bg1,
-
             body: BlocBuilder<SurahListBloc, SurahListState>(
-              builder: (context, state) {
-                return Stack(
-                  children: [
-                    // main scrollable content
-                    _buildBody(context, state),
-                  ],
+              builder: (context, listState) {
+                return BlocBuilder<PlayerBloc, PlayerState>(
+                  builder: (context, playerState) {
+                    return Stack(
+                      children: [
+                        _buildBody(context, listState, playerState),
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: playerState.currentSurah != null
+                              ? const MiniPlayer()
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -41,17 +95,28 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(BuildContext context, SurahListState state) {
+  Widget _buildBody(
+    BuildContext context,
+    SurahListState listState,
+    PlayerState playerState,
+  ) {
     return CustomScrollView(
       slivers: [
         SliverSafeArea(
-          sliver: SliverToBoxAdapter(child: _buildHeader(context)),
+          sliver: SliverToBoxAdapter(child: _buildHeader(context, playerState)),
         ),
         // Search bar
         SliverToBoxAdapter(child: _buildSearchBar(context)),
-
+        // Featured card
+        if (listState is SurahListLoaded || playerState.currentSurah != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: _buildFeatured(context, listState, playerState),
+            ),
+          ),
         // Section header
-        if (state is SurahListLoaded)
+        if (listState is SurahListLoaded)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
@@ -67,7 +132,7 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${state.surahs.length} surah',
+                    '${listState.surahs.length} surah',
                     style: GoogleFonts.plusJakartaSans(
                       color: AppColors.textFaint,
                       fontSize: 13,
@@ -78,14 +143,15 @@ class HomePage extends StatelessWidget {
             ),
           ),
         // Surah list
-        _buildSurahList(context, state),
+        _buildSurahList(context, listState, playerState),
         // Bottom padding for mini-player
         const SliverToBoxAdapter(child: SizedBox(height: 140)),
       ],
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  //  Header
+  Widget _buildHeader(BuildContext context, PlayerState playerState) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 6),
       child: Row(
@@ -116,7 +182,12 @@ class HomePage extends StatelessWidget {
           ),
           // History clock button
           GestureDetector(
-            onTap: () {},
+            onTap: () {
+              final surahs = context.read<SurahListBloc>().state;
+              if (surahs is SurahListLoaded) {
+                _showHistory(context, playerState, surahs.surahs);
+              }
+            },
             child: Container(
               width: 42,
               height: 42,
@@ -178,14 +249,49 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildSurahList(BuildContext context, SurahListState state) {
-    if (state is SurahListLoading) {
+  //  Featured card
+  Widget _buildFeatured(
+    BuildContext context,
+    SurahListState listState,
+    PlayerState playerState,
+  ) {
+    final Surah? displaySurah =
+        playerState.currentSurah ??
+        (listState is SurahListLoaded ? listState.surahs[2] : null);
+
+    if (displaySurah == null) return const SizedBox.shrink();
+
+    final bool hasHistory = playerState.currentSurah != null;
+
+    return FeaturedCard(
+      surah: displaySurah,
+      isPlaying: playerState.isPlaying && hasHistory,
+      hasHistory: hasHistory,
+      onTap: () {
+        if (hasHistory) {
+          context.pushNamed(PlayerPage.route.name);
+        } else if (listState is SurahListLoaded) {
+          context.read<PlayerBloc>().add(
+            PlaySurahEvent(surahs: listState.surahs, index: 2),
+          );
+        }
+      },
+    );
+  }
+
+  //  Surah list
+  Widget _buildSurahList(
+    BuildContext context,
+    SurahListState listState,
+    PlayerState playerState,
+  ) {
+    if (listState is SurahListLoading) {
       return const SliverFillRemaining(
         child: Center(child: CircularProgressIndicator(color: AppColors.gold)),
       );
     }
 
-    if (state is SurahListError) {
+    if (listState is SurahListError) {
       return SliverFillRemaining(
         child: Center(
           child: Column(
@@ -198,7 +304,7 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                state.message,
+                listState.message,
                 style: GoogleFonts.plusJakartaSans(
                   color: AppColors.textMuted,
                   fontSize: 14,
@@ -229,11 +335,18 @@ class HomePage extends StatelessWidget {
       );
     }
 
-    if (state is SurahListLoaded) {
-      final List<Surah> surahs = state.surahs;
+    if (listState is SurahListLoaded) {
+      final surahs = listState.surahs;
       return SliverList(
         delegate: SliverChildBuilderDelegate(
-          (context, i) => SurahRow(surah: surahs[i], onTap: () {}),
+          (context, i) => SurahRow(
+            surah: surahs[i],
+            isCurrent: playerState.currentSurah?.number == surahs[i].number,
+            isPlaying: playerState.isPlaying,
+            onTap: () => context.read<PlayerBloc>().add(
+              PlaySurahEvent(surahs: surahs, index: i),
+            ),
+          ),
           childCount: surahs.length,
         ),
       );
@@ -242,3 +355,5 @@ class HomePage extends StatelessWidget {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 }
+
+//  History bottom sheet
