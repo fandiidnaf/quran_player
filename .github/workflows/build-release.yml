@@ -72,6 +72,13 @@ jobs:
         run: |
           flutter build apk --release
 
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: android-releases
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+
   # ==========================================
   # JOB 2: BUILD IOS
   # ==========================================
