@@ -67,7 +67,7 @@ jobs:
       #       build/app/outputs/flutter-apk/app-release.apk
       #       build/app/outputs/bundle/release/app-release.aab
 
-      - name: Build APK & AAB
+      - name: Build APK
         run: |
           flutter build apk --release
 
@@ -140,11 +140,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      # - name: Create Release
+      #   uses: ncipollo/release-action@v1.21.0
+      #   with:
+      #     allowUpdates: true
+      #     artifacts: "artifacts/**/*.apk,artifacts/**/*.aab,artifacts/**/*.tar.gz"
+      #     tag: v${{ env.VERSION }}
+
       - name: Create Release
         uses: ncipollo/release-action@v1.21.0
         with:
           allowUpdates: true
-          artifacts: "artifacts/**/*.apk,artifacts/**/*.aab,artifacts/**/*.tar.gz"
+          artifacts: "artifacts/**/*.apk,artifacts/**/*.tar.gz"
           tag: v${{ env.VERSION }}
 
       - name: Archive Artifacts for Drive
