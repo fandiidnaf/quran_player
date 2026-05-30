@@ -174,7 +174,7 @@ class _SearchPageState extends State<SearchPage> {
                                   padding: const EdgeInsets.all(32),
                                   child: Text(
                                     'Tidak ditemukan.\nCoba kata kunci lain\n'
-                                    '(mis. "Yasin", "Rahman", "Alafasy").',
+                                    '(mis. "Yaseenn", "Rahmaan", "Alafasy").',
                                     textAlign: TextAlign.center,
                                     style: GoogleFonts.plusJakartaSans(
                                       color: AppColors.textMuted,
