@@ -33,7 +33,8 @@ class HomePage extends StatelessWidget {
             'Belum ada riwayat. Putar sebuah surah terlebih dahulu.',
             style: GoogleFonts.plusJakartaSans(),
           ),
-          backgroundColor: const Color(0xFF12211D),
+          // backgroundColor: const Color(0xFF12211D),
+          backgroundColor: AppColors.gold,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -355,5 +356,3 @@ class HomePage extends StatelessWidget {
     return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 }
-
-//  History bottom sheet

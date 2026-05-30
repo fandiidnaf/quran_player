@@ -27,15 +27,16 @@ class _SeekBarState extends State<SeekBar> {
   Duration? _dragValue;
 
   String _fmt(Duration d) {
-    final m = d.inMinutes.remainder(60).toString();
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$m:$s';
+    final String h = d.inHours > 0 ? '${d.inHours}:' : '';
+    final String m = d.inMinutes.remainder(60).toString();
+    final String s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$h$m:$s';
   }
 
   @override
   Widget build(BuildContext context) {
-    final current = _dragValue ?? widget.position;
-    final total = widget.duration;
+    final Duration current = _dragValue ?? widget.position;
+    final Duration total = widget.duration;
 
     return Column(
       children: [

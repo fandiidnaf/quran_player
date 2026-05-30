@@ -63,8 +63,8 @@ class _PlayingStateUpdated extends PlayerEvent {
   final bool isPlaying;
   const _PlayingStateUpdated(this.isPlaying);
 
-  @override
-  List<Object?> get props => [isPlaying];
+  // @override
+  // List<Object?> get props => [isPlaying];
 }
 
 /// Internal: the current track finished playing.

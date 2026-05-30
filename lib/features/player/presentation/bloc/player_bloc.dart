@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:synchronized/extension.dart';
 
 import '../../../../core/constants/api_constant.dart';
 import '../../../surah_list/domain/entities/surah.dart';
@@ -60,7 +61,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _subscribeToStreams();
   }
 
-  // ── Stream subscriptions ─────────────────────────────────────
+  //  Stream subscriptions ─
+
+  bool _isCompleting = false;
 
   void _subscribeToStreams() {
     _positionSub = _repository.positionStream.listen(
@@ -71,13 +74,16 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       (dur) => add(_DurationUpdated(dur)),
     );
 
-    _playingSub = _repository.playingStream.listen(
-      (playing) => add(_PlayingStateUpdated(playing)),
-    );
+    _playingSub = _repository.playingStream.listen((playing) {
+      add(_PlayingStateUpdated(playing));
+    });
 
-    _completedSub = _repository.completedStream.listen(
-      (_) => add(const _TrackCompleted()),
-    );
+    _completedSub = _repository.completedStream.listen((_) {
+      if (_isCompleting) return;
+      _isCompleting = true;
+      Future.delayed(const Duration(seconds: 1), () => _isCompleting = false);
+      add(const _TrackCompleted());
+    });
 
     // Engine-driven loading. This is the single source of truth for
     // `isLoading`, so it can never get stuck: once the engine is ready,
@@ -87,23 +93,22 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     );
   }
 
-  // ── Handlers ────────────────────────────────────────────────
+  //  Handlers
 
   Future<void> _onPlaySurah(
     PlaySurahEvent event,
     Emitter<PlayerState> emit,
   ) async {
-    final surah = event.surahs[event.index];
+    final Surah surah = event.surahs[event.index];
 
     // If tapping the same surah that's already loaded, just resume.
     if (state.currentSurah?.number == surah.number) {
       if (!state.isPlaying) await _repository.resume();
-      emit(state.copyWith(isPlayerExpanded: true));
+      emit(await state.copyWith(isPlayerExpanded: true));
       return;
     }
-
     emit(
-      state.copyWith(
+      await state.copyWith(
         currentSurah: surah,
         currentIndex: event.index,
         surahs: event.surahs,
@@ -117,6 +122,21 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       ),
     );
 
+    final resultStop = await _repository.stop();
+    await resultStop.fold(
+      (failure) async => emit(
+        await state.copyWith(isLoading: false, errorMessage: failure.message),
+      ),
+      (_) async {},
+    );
+
+    if (resultStop.isLeft()) {
+      // If stopping the previous track failed, we might be in a bad state. Don't
+      // attempt to play the new track, which could compound errors; just show
+      // the error and wait for user action.
+      return;
+    }
+
     var result = await _playSurah(
       surah.audioUrl,
       id: '${surah.number}',
@@ -128,7 +148,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     // surahs (returns HTTP 403). Retry with Alafasy, which is available for
     // all 114 surahs, so playback never silently fails.
     if (result.isLeft()) {
-      final fallbackUrl = ApiConstants.audioUrl('ar.alafasy', surah.number);
+      final String fallbackUrl = ApiConstants.audioUrl(
+        'ar.alafasy',
+        surah.number,
+      );
       if (fallbackUrl != surah.audioUrl) {
         result = await _playSurah(
           fallbackUrl,
@@ -139,13 +162,19 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       }
     }
 
-    result.fold(
-      (failure) =>
-          emit(state.copyWith(isLoading: false, errorMessage: failure.message)),
+    await result.fold(
+      (failure) async => emit(
+        await state.copyWith(isLoading: false, errorMessage: failure.message),
+      ),
       // Explicitly mark as playing. just_audio's `playing` flag stays true
       // across track completion, so its stream may not re-emit on auto-advance;
       // setting it here keeps state in sync with the engine.
-      (_) => emit(state.copyWith(isLoading: false, isPlaying: true)),
+      (_) async => emit(
+        await state.copyWith(
+          // isLoading: false,
+          // isPlaying: true
+        ),
+      ),
     );
   }
 
@@ -156,6 +185,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     // Ignore taps while a track is still loading — toggling play/pause
     // mid-load corrupts the intended play state (the "disabled / no sound"
     // symptom). The button shows a spinner during this window.
+
     if (state.currentSurah == null || state.isLoading) return;
 
     if (state.isPlaying) {
@@ -167,12 +197,12 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
 
   Future<void> _onSeek(SeekEvent event, Emitter<PlayerState> emit) async {
     await _seekAudio(event.position);
-    emit(state.copyWith(position: event.position));
+    emit(await state.copyWith(position: event.position));
   }
 
   Future<void> _onNext(NextSurahEvent event, Emitter<PlayerState> emit) async {
     if (state.surahs.isEmpty) return;
-    final next = _nextIndex();
+    final int next = _nextIndex();
     add(PlaySurahEvent(surahs: state.surahs, index: next));
   }
 
@@ -183,37 +213,52 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       await _seekAudio(Duration.zero);
       return;
     }
-    final prev = _prevIndex();
+    final int prev = _prevIndex();
     add(PlaySurahEvent(surahs: state.surahs, index: prev));
   }
 
-  void _onToggleShuffle(ToggleShuffleEvent event, Emitter<PlayerState> emit) {
-    emit(state.copyWith(isShuffle: !state.isShuffle));
+  Future<void> _onToggleShuffle(
+    ToggleShuffleEvent event,
+    Emitter<PlayerState> emit,
+  ) async {
+    emit(await state.copyWith(isShuffle: !state.isShuffle));
   }
 
-  void _onToggleRepeat(ToggleRepeatEvent event, Emitter<PlayerState> emit) {
-    emit(state.copyWith(isRepeat: !state.isRepeat));
+  Future<void> _onToggleRepeat(
+    ToggleRepeatEvent event,
+    Emitter<PlayerState> emit,
+  ) async {
+    emit(await state.copyWith(isRepeat: !state.isRepeat));
   }
 
-  void _onPositionUpdated(_PositionUpdated event, Emitter<PlayerState> emit) {
-    emit(state.copyWith(position: event.position));
+  Future<void> _onPositionUpdated(
+    _PositionUpdated event,
+    Emitter<PlayerState> emit,
+  ) async {
+    emit(await state.copyWith(position: event.position));
   }
 
-  void _onDurationUpdated(_DurationUpdated event, Emitter<PlayerState> emit) {
+  Future<void> _onDurationUpdated(
+    _DurationUpdated event,
+    Emitter<PlayerState> emit,
+  ) async {
     if (event.duration != null) {
-      emit(state.copyWith(duration: event.duration!));
+      emit(await state.copyWith(duration: event.duration!));
     }
   }
 
-  void _onPlayingStateUpdated(
+  Future<void> _onPlayingStateUpdated(
     _PlayingStateUpdated event,
     Emitter<PlayerState> emit,
-  ) {
-    emit(state.copyWith(isPlaying: event.isPlaying));
+  ) async {
+    emit(await state.copyWith(isPlaying: event.isPlaying));
   }
 
-  void _onLoadingUpdated(_LoadingUpdated event, Emitter<PlayerState> emit) {
-    emit(state.copyWith(isLoading: event.isLoading));
+  Future<void> _onLoadingUpdated(
+    _LoadingUpdated event,
+    Emitter<PlayerState> emit,
+  ) async {
+    emit(await state.copyWith(isLoading: event.isLoading));
   }
 
   /// Called when the current track finishes.
@@ -233,7 +278,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     }
   }
 
-  // ── Helpers ────────────────────────────────────────────────
+  //  Helpers
 
   int _nextIndex() {
     if (state.isShuffle) return _randomExcept(state.currentIndex);

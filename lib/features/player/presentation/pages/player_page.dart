@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/router/route_structure.dart';
+import '../../../surah_list/domain/entities/surah.dart';
 import '../bloc/player_bloc.dart';
 import '../widgets/artwork_widget.dart';
 import '../widgets/seek_bar.dart';
@@ -24,8 +25,8 @@ class PlayerPage extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
-        final surah = state.currentSurah!;
-        final colors = AppColors.coverFor(surah.number);
+        final Surah surah = state.currentSurah!;
+        final List<Color> colors = AppColors.coverFor(surah.number);
 
         return Scaffold(
           backgroundColor: Colors.transparent,
@@ -41,7 +42,7 @@ class PlayerPage extends StatelessWidget {
             child: SafeArea(
               child: Column(
                 children: [
-                  // ── Top bar ─────────────────────────────────
+                  //  Top bar ─
                   Padding(
                     padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
                     child: Row(
@@ -81,7 +82,7 @@ class PlayerPage extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Artwork ─────────────────────────────────
+                  //  Artwork ─
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(28, 8, 28, 8),
@@ -89,7 +90,7 @@ class PlayerPage extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Meta + controls ──────────────────────────
+                  //  Meta + controls
                   Padding(
                     padding: const EdgeInsets.fromLTRB(26, 0, 26, 24),
                     child: Column(
@@ -127,17 +128,18 @@ class PlayerPage extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
-                        // ── Seek bar ──────────────────────────
+                        //  Seek bar
                         SeekBar(
                           position: state.position,
                           duration: state.duration,
-                          onSeek: (pos) =>
-                              context.read<PlayerBloc>().add(SeekEvent(pos)),
+                          onSeek: (pos) {
+                            context.read<PlayerBloc>().add(SeekEvent(pos));
+                          },
                         ),
 
                         const SizedBox(height: 14),
 
-                        // ── Playback controls ────────────────
+                        //  Playback controls
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [

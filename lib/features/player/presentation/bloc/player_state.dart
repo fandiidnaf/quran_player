@@ -51,7 +51,7 @@ class PlayerState extends Equatable {
     this.errorMessage,
   });
 
-  PlayerState copyWith({
+  Future<PlayerState> copyWith({
     Surah? currentSurah,
     int? currentIndex,
     List<Surah>? surahs,
@@ -66,20 +66,22 @@ class PlayerState extends Equatable {
     String? errorMessage,
     bool clearError = false,
   }) {
-    return PlayerState(
-      currentSurah: currentSurah ?? this.currentSurah,
-      currentIndex: currentIndex ?? this.currentIndex,
-      surahs: surahs ?? this.surahs,
-      position: position ?? this.position,
-      duration: duration ?? this.duration,
-      isPlaying: isPlaying ?? this.isPlaying,
-      isLoading: isLoading ?? this.isLoading,
-      isShuffle: isShuffle ?? this.isShuffle,
-      isRepeat: isRepeat ?? this.isRepeat,
-      history: history ?? this.history,
-      isPlayerExpanded: isPlayerExpanded ?? this.isPlayerExpanded,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-    );
+    return synchronized<PlayerState>(() {
+      return PlayerState(
+        currentSurah: currentSurah ?? this.currentSurah,
+        currentIndex: currentIndex ?? this.currentIndex,
+        surahs: surahs ?? this.surahs,
+        position: position ?? this.position,
+        duration: duration ?? this.duration,
+        isPlaying: isPlaying ?? this.isPlaying,
+        isLoading: isLoading ?? this.isLoading,
+        isShuffle: isShuffle ?? this.isShuffle,
+        isRepeat: isRepeat ?? this.isRepeat,
+        history: history ?? this.history,
+        isPlayerExpanded: isPlayerExpanded ?? this.isPlayerExpanded,
+        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      );
+    });
   }
 
   @override

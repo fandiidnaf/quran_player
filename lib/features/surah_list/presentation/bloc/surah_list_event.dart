@@ -11,3 +11,11 @@ sealed class SurahListEvent extends Equatable {
 class LoadSurahs extends SurahListEvent {
   const LoadSurahs();
 }
+
+class ConfigureSurah extends SurahListEvent {
+  final int index;
+  const ConfigureSurah(this.index);
+
+  @override
+  List<Object> get props => [index];
+}
