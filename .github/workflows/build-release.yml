@@ -44,28 +44,32 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Decode Keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.p12
+      # - name: Decode Keystore
+      #   run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.p12
 
-      - name: Create key.properties
-        run: |
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
-          echo "storeFile=keystore.p12" >> android/key.properties
+      # - name: Create key.properties
+      #   run: |
+      #     echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+      #     echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+      #     echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+      #     echo "storeFile=keystore.p12" >> android/key.properties
+
+      # - name: Build APK & AAB
+      #   run: |
+      #     flutter build apk --release
+      #     flutter build appbundle
+
+      # - name: Upload Android Artifacts
+      #   uses: actions/upload-artifact@v7.0.1
+      #   with:
+      #     name: android-releases
+      #     path: |
+      #       build/app/outputs/flutter-apk/app-release.apk
+      #       build/app/outputs/bundle/release/app-release.aab
 
       - name: Build APK & AAB
         run: |
           flutter build apk --release
-          flutter build appbundle
-
-      - name: Upload Android Artifacts
-        uses: actions/upload-artifact@v7.0.1
-        with:
-          name: android-releases
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
 
   # ==========================================
   # JOB 2: BUILD IOS
