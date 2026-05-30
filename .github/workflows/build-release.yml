@@ -1,0 +1,147 @@
+# Next JOB:
+# 1. Upload Artifacts to Google Drive
+# 2. Upload Articats to Play Store
+# 3. Upload Articats to App Store
+# 4. Make a notification to Slack/Discord about the new release (with download links)
+
+name: "Build & Release"
+
+on:
+  pull_request:
+    branches: [dev, test]
+  push:
+    branches: [main, dev, test]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # ==========================================
+  # JOB 1: BUILD ANDROID
+  # ==========================================
+  build_android:
+    name: Build Android (APK & AAB)
+    runs-on: ubuntu-latest
+    # environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: "production"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set Up Java
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: "oracle"
+          java-version: "17"
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: "3.41.9"
+          channel: "stable"
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.p12
+
+      - name: Create key.properties
+        run: |
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" > android/key.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/key.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
+          echo "storeFile=keystore.p12" >> android/key.properties
+
+      - name: Build APK & AAB
+        run: |
+          flutter build apk --release
+          flutter build appbundle
+
+      - name: Upload Android Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: android-releases
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+
+  # ==========================================
+  # JOB 2: BUILD IOS
+  # ==========================================
+  build_ios:
+    name: Build iOS (IPA)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          flutter-version: "3.41.9"
+          channel: "stable"
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build IPA
+        run: flutter build ipa --no-codesign
+
+      - name: Compress IPA
+        run: |
+          cd build
+          tar -czf ios_build.tar.gz ios
+
+      - name: Upload iOS Artifacts
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: ios-release
+          path: build/ios_build.tar.gz
+
+  # ==========================================
+  # JOB 3: CREATE RELEASE (Waiting Android & iOS Finish first)
+  # ==========================================
+  release:
+    name: Create GitHub Release
+    needs: [build_android, build_ios]
+    runs-on: ubuntu-latest
+    # environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: "production"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v8.0.1
+        with:
+          path: artifacts
+
+      - name: Extract version from pubspec.yaml
+        id: extract_version
+        run: |
+          version=$(grep '^version: ' pubspec.yaml | cut -d ' ' -f 2 | tr -d '\r')
+          echo "VERSION=$version" >> $GITHUB_ENV
+
+      - name: Check if Tag Exists
+        run: |
+          if git rev-parse "v${{ env.VERSION }}" >/dev/null 2>&1; then
+            echo "VERSION=${{ env.VERSION }}-build-${{ github.run_number }}" >> $GITHUB_ENV
+          fi
+
+      - name: Delete Existing Release (If Any)
+        run: |
+          gh release delete v${{ env.VERSION }} --cleanup-tag --yes --repo $GITHUB_REPOSITORY || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Create Release
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          allowUpdates: true
+          artifacts: "artifacts/**/*.apk,artifacts/**/*.aab,artifacts/**/*.tar.gz"
+          tag: v${{ env.VERSION }}
+
+      - name: Archive Artifacts for Drive
+        run: zip -r release-v${{ env.VERSION }}.zip artifacts/
