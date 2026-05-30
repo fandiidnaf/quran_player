@@ -21,7 +21,8 @@ jobs:
   # JOB 1: BUILD ANDROID
   # ==========================================
   build_android:
-    name: Build Android (APK & AAB)
+    # name: Build Android (APK & AAB)
+    name: Build Android (APK)
     runs-on: ubuntu-latest
     # environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
     environment: "production"
