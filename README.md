@@ -52,7 +52,7 @@ Built for a mobile technical test, with emphasis on **clean architecture**,
 
 **Screen recording:**
 
-[![Watch the demo](docs/screenshots/home.png)](https://raw.githubusercontent.com/fandiidnaf/quran_player/main/docs/screenshots/demo.mov)
+[![Watch the demo](docs/screenshots/home.png)](https://github.com/user-attachments/assets/d656047a-27e7-4e94-951d-358a9391f291)
 
 
 ---
