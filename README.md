@@ -52,7 +52,7 @@ Built for a mobile technical test, with emphasis on **clean architecture**,
 
 **Screen recording:**
 
-[![Watch the demo](docs/screenshots/home.png)](https://raw.githubusercontent.com/fandiidnaf/quran_player/main/docs/screenshots/demo.webm)
+[![Watch the demo](docs/screenshots/home.png)](https://raw.githubusercontent.com/fandiidnaf/quran_player/main/docs/screenshots/demo.mov)
 
 
 ---
